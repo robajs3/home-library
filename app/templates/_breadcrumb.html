@@ -1,0 +1,14 @@
+{% macro render(crumbs) %}
+<nav class="hl-breadcrumb" aria-label="breadcrumb">
+  <ol>
+    {% for url, label in crumbs %}
+      <li class="crumb-item">
+        <a href="{{ url }}">{{ label }}</a>
+      </li>
+      {% if not loop.last %}
+        <li class="crumb-sep"><i class="bi bi-chevron-right"></i></li>
+      {% endif %}
+    {% endfor %}
+  </ol>
+</nav>
+{% endmacro %}

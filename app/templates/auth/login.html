@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Logowanie — Home Library{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+  <div class="card auth-card">
+    <div class="card-body">
+      <h3 class="text-center mb-4"><i class="bi bi-book-half"></i> Home Library</h3>
+      <h5 class="mb-3">Zaloguj się</h5>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">E-mail</label>
+          <input type="email" name="email" class="form-control" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Hasło</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3 remember-check form-check">
+          <input type="checkbox" name="remember" id="remember" class="form-check-input" value="1">
+          <label for="remember">Zapamiętaj mnie</label>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Zaloguj</button>
+      </form>
+      <p class="text-center mt-3 mb-0">
+        Nie masz konta? <a href="{{ url_for('auth.register') }}">Zarejestruj się</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

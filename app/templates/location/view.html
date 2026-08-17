@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}{{ location.name }} — {{ library.name }}{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  (url_for('main.dashboard'), 'Twoje biblioteki'),
+  (url_for('library.home', library_id=library.id), library.name)
+]) }}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+  <h2 class="mb-0"><i class="bi bi-geo-alt-fill"></i> {{ location.name }}</h2>
+  <form method="post" action="{{ url_for('location.delete', location_id=location.id) }}"
+        onsubmit="return confirm('Usunąć lokalizację „{{ location.name }}” wraz z szafkami i książkami w niej?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Usuń lokalizację</button>
+  </form>
+</div>
+{% if location.description %}<p class="text-muted-soft">{{ location.description }}</p>{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mt-4">
+  <h5 class="section-title mb-0"><i class="bi bi-archive"></i> Szafki</h5>
+  <button class="btn btn-sm btn-accent" type="button" data-bs-toggle="collapse" data-bs-target="#newCabinetForm">
+    <i class="bi bi-plus-lg"></i> Dodaj szafkę
+  </button>
+</div>
+
+<div class="collapse mt-3" id="newCabinetForm">
+  <div class="card">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('cabinet.create', location_id=location.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label">Nazwa szafki</label>
+            <input type="text" name="name" class="form-control" placeholder="np. Regał A" required>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Zdjęcie (opcjonalnie)</label>
+            <input type="file" name="photo" class="form-control" accept="image/*">
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Dodaj</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  {% for cabinet in cabinets %}
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('cabinet.view', cabinet_id=cabinet.id) }}" class="text-decoration-none text-reset">
+        <div class="card hoverable h-100">
+          {% if cabinet.photo_filename %}
+            <img src="{{ url_for('main.uploaded_file', filename=cabinet.photo_filename) }}" class="cabinet-thumb">
+          {% else %}
+            <div class="cabinet-thumb-placeholder"><i class="bi bi-archive"></i></div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="mb-1">{{ cabinet.name }}</h5>
+            <p class="mb-0 small text-muted-soft"><i class="bi bi-book"></i> {{ cabinet.books|selectattr('is_removed', 'equalto', false)|list|length }} książek</p>
+          </div>
+        </div>
+      </a>
+    </div>
+  {% else %}
+    <div class="col-12">
+      <p class="text-muted-soft">Brak szafek w tej lokalizacji — dodaj pierwszą powyżej.</p>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

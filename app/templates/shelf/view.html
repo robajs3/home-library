@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}{{ shelf.name }} — {{ shelf.cabinet.name }}{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  (url_for('main.dashboard'), 'Twoje biblioteki'),
+  (url_for('library.home', library_id=library.id), library.name),
+  (url_for('location.view', location_id=shelf.cabinet.location.id), shelf.cabinet.location.name),
+  (url_for('cabinet.view', cabinet_id=shelf.cabinet.id), shelf.cabinet.name)
+]) }}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1 mt-2">
+  <h2 class="mb-0"><i class="bi bi-layout-three-columns"></i> {{ shelf.name }}</h2>
+  <form method="post" action="{{ url_for('shelf.delete', shelf_id=shelf.id) }}"
+        onsubmit="return confirm('Usunąć półkę „{{ shelf.name }}” wraz z książkami na niej?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Usuń półkę</button>
+  </form>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-4">
+  <h5 class="section-title mb-0"><i class="bi bi-book"></i> Książki ({{ books|length }})</h5>
+  <button class="btn btn-sm btn-accent" type="button" data-bs-toggle="collapse" data-bs-target="#newBookForm">
+    <i class="bi bi-plus-lg"></i> Dodaj książkę
+  </button>
+</div>
+
+<div class="collapse mt-3" id="newBookForm">
+  <div class="card">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('book.create', shelf_id=shelf.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Tytuł</label>
+            <input type="text" name="title" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Autor</label>
+            <input type="text" name="author" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Gatunek</label>
+            <input type="text" name="genre" class="form-control" placeholder="np. Fantastyka">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Rok wydania</label>
+            <input type="number" name="year" class="form-control" min="0" max="2100">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Kolor okładki</label>
+            <input type="color" name="cover_color" class="form-control form-control-color" value="#3a5a40">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Zdjęcie (opcjonalnie)</label>
+            <input type="file" name="photo" class="form-control" accept="image/*">
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary mt-2">Dodaj książkę</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+  {% for book in books %}
+    <div class="col-6 col-sm-4 col-lg-3">
+      <a href="{{ url_for('book.view', book_id=book.id) }}" class="text-decoration-none text-reset">
+        <div class="card hoverable h-100">
+          {% if book.photo_filename %}
+            <img src="{{ url_for('main.uploaded_file', filename=book.photo_filename) }}" class="thumb">
+          {% else %}
+            <div class="thumb-placeholder"><i class="bi bi-book"></i></div>
+          {% endif %}
+          <div class="card-body py-2">
+            {% if book.cover_color %}<span class="color-dot" style="background:{{ book.cover_color }};"></span>{% endif %}
+            <span class="small fw-semibold">{{ book.title }}</span>
+            <p class="mb-0 small text-muted-soft text-truncate">{{ book.author or "—" }}</p>
+            {% if book.genre %}<p class="mb-0 small text-muted-soft text-truncate"><i class="bi bi-tag"></i> {{ book.genre }}</p>{% endif %}
+          </div>
+        </div>
+      </a>
+    </div>
+  {% else %}
+    <div class="col-12">
+      <p class="text-muted-soft">Ta półka jest pusta — dodaj pierwszą książkę powyżej.</p>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

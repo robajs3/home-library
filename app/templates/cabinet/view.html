@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}{{ cabinet.name }} — {{ library.name }}{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  (url_for('main.dashboard'), 'Twoje biblioteki'),
+  (url_for('library.home', library_id=library.id), library.name),
+  (url_for('location.view', location_id=cabinet.location.id), cabinet.location.name)
+]) }}
+
+<div class="row g-4 mt-1">
+  <div class="col-md-4">
+    {% if cabinet.photo_filename %}
+      <img src="{{ url_for('main.uploaded_file', filename=cabinet.photo_filename) }}" class="big-cabinet-photo mb-3">
+    {% else %}
+      <div class="big-cabinet-photo-placeholder mb-3"><i class="bi bi-archive"></i></div>
+    {% endif %}
+    <form method="post" action="{{ url_for('cabinet.upload_photo', cabinet_id=cabinet.id) }}" enctype="multipart/form-data" class="d-flex gap-2 mb-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="photo" class="form-control form-control-sm" accept="image/*" required>
+      <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i></button>
+    </form>
+    <form method="post" action="{{ url_for('cabinet.delete', cabinet_id=cabinet.id) }}"
+          onsubmit="return confirm('Usunąć szafkę „{{ cabinet.name }}” wraz z półkami i książkami w niej?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash"></i> Usuń szafkę</button>
+    </form>
+  </div>
+
+  <div class="col-md-8">
+    <h2 class="mb-3"><i class="bi bi-archive-fill"></i> {{ cabinet.name }}</h2>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="section-title mb-0"><i class="bi bi-layout-three-columns"></i> Półki ({{ shelves|length }})</h5>
+      <button class="btn btn-sm btn-accent" type="button" data-bs-toggle="collapse" data-bs-target="#newShelfForm">
+        <i class="bi bi-plus-lg"></i> Dodaj półkę
+      </button>
+    </div>
+
+    <div class="collapse mt-3" id="newShelfForm">
+      <div class="card">
+        <div class="card-body">
+          <form method="post" action="{{ url_for('shelf.create', cabinet_id=cabinet.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-2 align-items-end">
+              <div class="col-md-9">
+                <label class="form-label">Nazwa półki</label>
+                <input type="text" name="name" class="form-control" placeholder="np. Półka 1" required>
+              </div>
+              <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Dodaj</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+      {% for shelf in shelves %}
+        <div class="col-sm-6">
+          <a href="{{ url_for('shelf.view', shelf_id=shelf.id) }}" class="text-decoration-none text-reset">
+            <div class="card hoverable h-100">
+              <div class="card-body">
+                <h5 class="mb-1"><i class="bi bi-layout-three-columns text-secondary"></i> {{ shelf.name }}</h5>
+                <p class="mb-0 small text-muted-soft">
+                  <i class="bi bi-book"></i>
+                  {{ shelf.books|selectattr('is_removed', 'equalto', false)|list|length }} książek
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% else %}
+        <div class="col-12">
+          <p class="text-muted-soft">Ta szafka jest pusta — dodaj pierwszą półkę powyżej.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

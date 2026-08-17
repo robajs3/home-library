@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Polityka prywatności — Home Library{% endblock %}
+{% block content %}
+
+<div class="privacy-wrap">
+  <div class="privacy-header">
+    <i class="bi bi-shield-lock-fill"></i>
+    <div>
+      <h1 class="mb-0">Polityka prywatności</h1>
+      <p class="text-muted-soft mb-0">Ostatnia aktualizacja: 17.08.2026</p>
+    </div>
+  </div>
+
+  <div class="privacy-card">
+    <p class="mb-0">
+      Twoje dane są przetwarzane zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679
+      (RODO). Administratorem danych osobowych jest operator serwisu Home Library.
+    </p>
+  </div>
+
+  <div class="privacy-card">
+    <h2><i class="bi bi-info-circle"></i> Jakie dane zbieramy?</h2>
+    <ul class="privacy-list">
+      <li>
+        <i class="bi bi-check2"></i>
+        <span><strong>Dane konta</strong> — imię/nazwa, adres e-mail, zahaszowane hasło</span>
+      </li>
+      <li>
+        <i class="bi bi-check2"></i>
+        <span><strong>Dane bibliotek</strong> — nazwy bibliotek, lokalizacji, szafek i półek, które tworzysz</span>
+      </li>
+      <li>
+        <i class="bi bi-check2"></i>
+        <span><strong>Dane książek</strong> — tytuły, autorzy, gatunki, roczniki wydania oraz zdjęcia okładek/szafek dodane przez Ciebie</span>
+      </li>
+      <li>
+        <i class="bi bi-check2"></i>
+        <span><strong>Dane sesji</strong> — ciasteczko sesyjne oraz opcjonalne ciasteczko „zapamiętaj mnie” (jeśli je włączysz przy logowaniu)</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="privacy-card">
+    <h2><i class="bi bi-bullseye"></i> Cel przetwarzania</h2>
+    <ul class="privacy-list">
+      <li>
+        <i class="bi bi-check2"></i>
+        <span>Uwierzytelnianie i zarządzanie kontami użytkowników</span>
+      </li>
+      <li>
+        <i class="bi bi-check2"></i>
+        <span>Prowadzenie i udostępnianie domowej biblioteki w ramach kont, do których dołączyłeś/aś (np. przez kod dołączenia)</span>
+      </li>
+      <li>
+        <i class="bi bi-check2"></i>
+        <span>Przechowywanie zdjęć książek i szafek dodanych przez użytkowników</span>
+      </li>
+      <li>
+        <i class="bi bi-check2"></i>
+        <span>Zapewnienie bezpieczeństwa działania aplikacji</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="privacy-card">
+    <h2><i class="bi bi-people"></i> Twoje prawa</h2>
+    <div class="rights-grid">
+      <div class="right-item">
+        <span class="right-label">Dostęp</span>
+        <span class="right-desc">Prawo do uzyskania kopii swoich danych</span>
+      </div>
+      <div class="right-item">
+        <span class="right-label">Korekta</span>
+        <span class="right-desc">Prawo do poprawy nieprawidłowych danych</span>
+      </div>
+      <div class="right-item">
+        <span class="right-label">Usunięcie</span>
+        <span class="right-desc">Prawo do żądania usunięcia danych („prawo do bycia zapomnianym”)</span>
+      </div>
+      <div class="right-item">
+        <span class="right-label">Ograniczenie</span>
+        <span class="right-desc">Prawo do ograniczenia przetwarzania danych</span>
+      </div>
+      <div class="right-item">
+        <span class="right-label">Przeniesienie</span>
+        <span class="right-desc">Prawo do otrzymania danych w ustrukturyzowanym formacie</span>
+      </div>
+      <div class="right-item">
+        <span class="right-label">Sprzeciw</span>
+        <span class="right-desc">Prawo do wniesienia sprzeciwu wobec przetwarzania</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="privacy-card">
+    <h2><i class="bi bi-envelope"></i> Kontakt z administratorem</h2>
+    <p class="mb-2">W sprawach dotyczących ochrony danych osobowych prosimy o kontakt:</p>
+    <a href="mailto:robajsstrzelczyk@gmail.com" class="footer-link">
+      <i class="bi bi-envelope"></i> robajsstrzelczyk@gmail.com
+    </a>
+  </div>
+
+  <div class="text-center mt-2">
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Powrót
+      </a>
+    {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Powrót do logowania
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

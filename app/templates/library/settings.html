@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}Ustawienia — {{ library.name }}{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  (url_for('main.dashboard'), 'Twoje biblioteki'),
+  (url_for('library.home', library_id=library.id), library.name)
+]) }}
+<h2 class="mb-4"><i class="bi bi-gear"></i> {{ "Ustawienia" if membership.role == "owner" else "Członkowie" }}</h2>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="section-title"><i class="bi bi-key"></i> Kod dołączenia</h5>
+        <p class="mb-2">Udostępnij ten kod, aby zaprosić kogoś do biblioteki:</p>
+        <span class="join-code">{{ library.join_code }}</span>
+        {% if membership.role == "owner" %}
+          <form method="post" action="{{ url_for('library.regenerate_code', library_id=library.id) }}" class="mt-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary" onclick="return confirm('Wygenerować nowy kod? Stary przestanie działać.');">
+              <i class="bi bi-arrow-clockwise"></i> Wygeneruj nowy kod
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if membership.role == "owner" %}
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="section-title"><i class="bi bi-pencil"></i> Nazwa biblioteki</h5>
+          <form method="post" action="{{ url_for('library.rename', library_id=library.id) }}" class="d-flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="name" value="{{ library.name }}" class="form-control" required>
+            <button type="submit" class="btn btn-primary">Zapisz</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-danger">
+        <div class="card-body">
+          <h5 class="section-title text-danger"><i class="bi bi-exclamation-triangle"></i> Strefa niebezpieczna</h5>
+          <p class="text-muted-soft small">Usunięcie biblioteki skasuje wszystkie lokalizacje, szafki i książki.</p>
+          <form method="post" action="{{ url_for('library.delete', library_id=library.id) }}"
+                onsubmit="return confirm('Na pewno usunąć bibliotekę „{{ library.name }}” wraz z całą zawartością?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger">Usuń bibliotekę</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="section-title"><i class="bi bi-people"></i> Członkowie ({{ members|length }})</h5>
+        <ul class="list-group list-group-flush">
+          {% for m in members %}
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+              <div>
+                <span class="fw-semibold">{{ m.user.name }}</span>
+                <span class="text-muted-soft small d-block">{{ m.user.email }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                {% if m.role == 'owner' %}
+                  <span class="badge badge-role-owner">właściciel</span>
+                {% else %}
+                  <span class="badge badge-role-member">członek</span>
+                {% endif %}
+                {% if membership.role == "owner" and m.role != "owner" %}
+                  <form method="post" action="{{ url_for('library.remove_member', library_id=library.id, member_id=m.id) }}"
+                        onsubmit="return confirm('Usunąć {{ m.user.name }} z biblioteki?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button>
+                  </form>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}Spis książek — {{ library.name }}{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  (url_for('main.dashboard'), 'Twoje biblioteki'),
+  (url_for('library.home', library_id=library.id), library.name)
+]) }}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <h2 class="mb-0"><i class="bi bi-table"></i> Spis książek</h2>
+  <span class="text-muted-soft small">{{ books|length }} pozycji</span>
+</div>
+
+<form method="get" class="d-flex gap-2 mb-3">
+  <input type="text" name="q" value="{{ query }}" class="form-control"
+         placeholder="Szukaj po tytule, autorze, gatunku, lokalizacji, szafce, półce…">
+  <input type="hidden" name="sort" value="{{ sort }}">
+  <input type="hidden" name="dir" value="{{ direction }}">
+  <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+  {% if query %}
+    <a href="{{ url_for('library.all_books', library_id=library.id, sort=sort, dir=direction) }}" class="btn btn-outline-secondary">
+      <i class="bi bi-x-lg"></i>
+    </a>
+  {% endif %}
+</form>
+
+{% macro sort_link(key, label) %}
+  {% set next_dir = 'desc' if sort == key and direction == 'asc' else 'asc' %}
+  <a href="{{ url_for('library.all_books', library_id=library.id, q=query, sort=key, dir=next_dir) }}">
+    {{ label }}
+    {% if sort == key %}
+      <i class="bi bi-caret-{{ 'up' if direction == 'asc' else 'down' }}-fill"></i>
+    {% endif %}
+  </a>
+{% endmacro %}
+
+{% if books %}
+  <div class="book-table-wrap">
+    <div class="table-responsive">
+      <table class="table book-table mb-0">
+        <thead>
+          <tr>
+            <th>{{ sort_link('title', 'Tytuł') }}</th>
+            <th>{{ sort_link('author', 'Autor') }}</th>
+            <th class="d-none d-md-table-cell">{{ sort_link('genre', 'Gatunek') }}</th>
+            <th class="d-none d-sm-table-cell">{{ sort_link('year', 'Rok') }}</th>
+            <th>{{ sort_link('location', 'Miejsce') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for book in books %}
+            <tr>
+              <td class="book-title-cell">
+                {% if book.cover_color %}<span class="color-dot" style="background:{{ book.cover_color }};"></span>{% endif %}
+                <a href="{{ url_for('book.view', book_id=book.id) }}">{{ book.title }}</a>
+              </td>
+              <td>{{ book.author or "—" }}</td>
+              <td class="d-none d-md-table-cell">{{ book.genre or "—" }}</td>
+              <td class="d-none d-sm-table-cell">{{ book.year or "—" }}</td>
+              <td class="book-path">
+                {% if book.shelf %}
+                  <i class="bi bi-geo-alt"></i> {{ book.shelf.cabinet.location.name }}
+                  <i class="bi bi-chevron-right"></i> {{ book.shelf.cabinet.name }}
+                  <i class="bi bi-chevron-right"></i> {{ book.shelf.name }}
+                {% else %}
+                  <span class="text-muted-soft">brak miejsca</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <p class="text-muted-soft">
+    {% if query %}Brak wyników dla „{{ query }}”.{% else %}Ta biblioteka nie ma jeszcze żadnych książek.{% endif %}
+  </p>
+{% endif %}
+
+{% endblock %}

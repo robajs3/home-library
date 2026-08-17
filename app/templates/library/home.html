@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}{{ library.name }} — Home Library{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+  <div>
+    {{ breadcrumb([(url_for('main.dashboard'), 'Twoje biblioteki')]) }}
+    <h2 class="mb-0"><i class="bi bi-book-half"></i> {{ library.name }}</h2>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{{ url_for('library.all_books', library_id=library.id) }}" class="btn btn-outline-primary">
+      <i class="bi bi-table"></i> Spis książek
+    </a>
+    <a href="{{ url_for('library.removed_books', library_id=library.id) }}" class="btn btn-outline-primary">
+      <i class="bi bi-box-arrow-up"></i> Wyjęte książki
+      {% if removed_count %}<span class="badge bg-secondary">{{ removed_count }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('library.settings', library_id=library.id) }}" class="btn btn-outline-primary">
+      <i class="bi bi-people"></i> {% if membership.role == 'owner' %}Ustawienia{% else %}Członkowie{% endif %}
+    </a>
+  </div>
+</div>
+
+<div class="my-4">
+  <form method="get" class="d-flex gap-2">
+    <input type="text" name="q" value="{{ query }}" class="form-control form-control-lg"
+           placeholder="Szukaj książki po tytule, autorze lub kolorze okładki…">
+    <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-search"></i></button>
+    {% if query %}
+      <a href="{{ url_for('library.home', library_id=library.id) }}" class="btn btn-outline-secondary btn-lg">
+        <i class="bi bi-x-lg"></i>
+      </a>
+    {% endif %}
+  </form>
+</div>
+
+{% if query %}
+  <h5 class="section-title">Wyniki wyszukiwania dla „{{ query }}” ({{ results|length }})</h5>
+  {% if results %}
+    <div class="row g-3 mb-5">
+      {% for book in results %}
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+          <a href="{{ url_for('book.view', book_id=book.id) }}" class="text-decoration-none text-reset">
+            <div class="card hoverable h-100">
+              {% if book.photo_filename %}
+                <img src="{{ url_for('main.uploaded_file', filename=book.photo_filename) }}" class="thumb">
+              {% else %}
+                <div class="thumb-placeholder"><i class="bi bi-book"></i></div>
+              {% endif %}
+              <div class="card-body py-2">
+                <p class="mb-0 small fw-semibold text-truncate">{{ book.title }}</p>
+                <p class="mb-0 small text-muted-soft text-truncate">{{ book.author or "—" }}</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted-soft mb-5">Brak wyników.</p>
+  {% endif %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center">
+  <h5 class="section-title mb-0"><i class="bi bi-geo-alt"></i> Lokalizacje</h5>
+  <button class="btn btn-sm btn-accent" type="button" data-bs-toggle="collapse" data-bs-target="#newLocationForm">
+    <i class="bi bi-plus-lg"></i> Dodaj lokalizację
+  </button>
+</div>
+
+<div class="collapse mt-3" id="newLocationForm">
+  <div class="card">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('location.create', library_id=library.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-2">
+          <div class="col-md-4">
+            <input type="text" name="name" class="form-control" placeholder="Nazwa (np. Salon)" required>
+          </div>
+          <div class="col-md-6">
+            <input type="text" name="description" class="form-control" placeholder="Opis (opcjonalnie)">
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Dodaj</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  {% for loc in locations %}
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('location.view', location_id=loc.id) }}" class="text-decoration-none text-reset">
+        <div class="card hoverable h-100">
+          <div class="card-body">
+            <h5 class="mb-1"><i class="bi bi-geo-alt-fill text-secondary"></i> {{ loc.name }}</h5>
+            {% if loc.description %}<p class="text-muted-soft small mb-2">{{ loc.description }}</p>{% endif %}
+            <p class="mb-0 small text-muted-soft"><i class="bi bi-archive"></i> {{ loc.cabinets|length }} szafek</p>
+          </div>
+        </div>
+      </a>
+    </div>
+  {% else %}
+    <div class="col-12">
+      <p class="text-muted-soft">Brak lokalizacji — dodaj pierwszą powyżej.</p>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

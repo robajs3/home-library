@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% from "_breadcrumb.html" import render as breadcrumb %}
+{% block title %}{{ book.title }} — {{ library.name }}{% endblock %}
+{% block content %}
+
+{% set crumbs = [
+  (url_for('main.dashboard'), 'Twoje biblioteki'),
+  (url_for('library.home', library_id=library.id), library.name)
+] %}
+{% if book.shelf %}
+  {% set crumbs = crumbs + [
+    (url_for('location.view', location_id=book.shelf.cabinet.location.id), book.shelf.cabinet.location.name),
+    (url_for('cabinet.view', cabinet_id=book.shelf.cabinet.id), book.shelf.cabinet.name),
+    (url_for('shelf.view', shelf_id=book.shelf.id), book.shelf.name)
+  ] %}
+{% endif %}
+{{ breadcrumb(crumbs) }}
+
+<div class="row g-4 mt-1">
+  <div class="col-md-4">
+    {% if book.photo_filename %}
+      <img src="{{ url_for('main.uploaded_file', filename=book.photo_filename) }}" class="big-photo mb-3">
+    {% else %}
+      <div class="big-photo-placeholder mb-3"><i class="bi bi-book"></i></div>
+    {% endif %}
+    <form method="post" action="{{ url_for('book.upload_photo', book_id=book.id) }}" enctype="multipart/form-data" class="d-flex gap-2 mb-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="photo" class="form-control form-control-sm" accept="image/*" required>
+      <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i></button>
+    </form>
+
+    <form method="post" action="{{ url_for('book.delete', book_id=book.id) }}"
+          onsubmit="return confirm('Usunąć książkę „{{ book.title }}” na stałe?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash"></i> Usuń książkę</button>
+    </form>
+  </div>
+
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+      <h2 class="mb-0">
+        {% if book.cover_color %}<span class="color-dot" style="background:{{ book.cover_color }};"></span>{% endif %}
+        {{ book.title }}
+      </h2>
+      {% if book.is_removed %}
+        <span class="badge bg-warning text-dark fs-6"><i class="bi bi-box-arrow-up"></i> Wyjęta z biblioteki</span>
+      {% else %}
+        <span class="badge bg-success fs-6"><i class="bi bi-check2"></i> Na miejscu</span>
+      {% endif %}
+    </div>
+
+    {% if book.genre %}<p class="mb-2"><span class="badge bg-secondary"><i class="bi bi-tag"></i> {{ book.genre }}</span></p>{% endif %}
+
+    <p class="text-muted-soft mb-4">
+      {% if book.shelf %}
+        Miejsce: <strong>{{ book.shelf.cabinet.location.name }} → {{ book.shelf.cabinet.name }} → {{ book.shelf.name }}</strong>
+      {% elif book.last_shelf %}
+        Ostatnie miejsce: <strong>{{ book.last_shelf.cabinet.location.name }} → {{ book.last_shelf.cabinet.name }} → {{ book.last_shelf.name }}</strong>
+      {% else %}
+        Brak przypisanego miejsca.
+      {% endif %}
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="section-title"><i class="bi bi-pencil"></i> Dane książki</h5>
+        <form method="post" action="{{ url_for('book.edit', book_id=book.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Tytuł</label>
+              <input type="text" name="title" class="form-control" value="{{ book.title }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Autor</label>
+              <input type="text" name="author" class="form-control" value="{{ book.author or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Gatunek</label>
+              <input type="text" name="genre" class="form-control" value="{{ book.genre or '' }}" placeholder="np. Fantastyka">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Rok wydania</label>
+              <input type="number" name="year" class="form-control" value="{{ book.year or '' }}" min="0" max="2100">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Kolor okładki</label>
+              <input type="color" name="cover_color" class="form-control form-control-color" value="{{ book.cover_color or '#3a5a40' }}">
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary mt-2">Zapisz zmiany</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h5 class="section-title"><i class="bi bi-arrow-left-right"></i> Zarządzanie miejscem</h5>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% if not book.is_removed %}
+            <form method="post" action="{{ url_for('book.take_out', book_id=book.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-warning"><i class="bi bi-box-arrow-up"></i> Wyjmij</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('book.put_back', book_id=book.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-success" {% if not book.last_shelf_id %}disabled{% endif %}>
+                <i class="bi bi-arrow-return-left"></i> Odłóż z powrotem
+              </button>
+            </form>
+          {% endif %}
+        </div>
+
+        <form method="post" action="{{ url_for('book.move', book_id=book.id) }}" class="d-flex flex-wrap gap-2 align-items-center">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="fw-semibold mb-0">Przełóż do:</label>
+          <select name="shelf_id" class="form-select w-auto" required>
+            <option value="" disabled selected>Wybierz półkę…</option>
+            {% for loc in library.locations|sort(attribute='name') %}
+              {% for c in loc.cabinets|sort(attribute='name') %}
+                {% if c.shelves %}
+                  <optgroup label="{{ loc.name }} → {{ c.name }}">
+                    {% for s in c.shelves %}
+                      <option value="{{ s.id }}" {% if book.shelf_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                  </optgroup>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-outline-primary"><i class="bi bi-send"></i> Przełóż</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
