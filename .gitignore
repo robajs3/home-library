@@ -24,3 +24,5 @@ uploads/
 # System
 .DS_Store
 Thumbs.db
+
+.patch

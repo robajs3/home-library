@@ -1,4 +1,5 @@
 import os
+import secrets
 
 from flask import Flask
 
@@ -33,6 +34,38 @@ class PrefixMiddleware:
         return self.app(environ, start_response)
 
 
+def _create_homelibrary_user(hub_username: str):
+    """Zakłada w Home Library nowe lokalne konto dla usera z LoginHub, który
+    jeszcze nie miał tu żadnego konta (wywoływane przez
+    sso_client.resolve_or_create_local_user przy pierwszej wizycie).
+    Hasło jest losowe i nieznane nikomu — logowanie idzie wyłącznie przez SSO.
+
+    Home Library loguje po e-mailu, a nie po username, a Hub nie zna e-maila
+    usera — generujemy deterministyczny placeholder z hub_username, więc
+    powtórne wywołanie (np. gdy zgłoszenie do Huba nie doszło za pierwszym
+    razem) trafi na już istniejące konto zamiast tworzyć duplikat.
+    """
+    from .extensions import db
+    from .models import User
+
+    placeholder_email = f"{hub_username}@sso.local"
+    existing = User.query.filter_by(email=placeholder_email).first()
+    if existing:
+        return existing.id, existing.email
+
+    email = placeholder_email
+    suffix = 1
+    while User.query.filter_by(email=email).first():
+        suffix += 1
+        email = f"{hub_username}{suffix}@sso.local"
+
+    user = User(name=hub_username, email=email)
+    user.set_password(secrets.token_urlsafe(24))
+    db.session.add(user)
+    db.session.commit()
+    return user.id, user.email
+
+
 def create_app():
     app = Flask(__name__, static_url_path="/static")
     app.config.from_object(Config)
@@ -61,6 +94,29 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+
+    from . import sso_client
+    from flask_login import login_user, current_user
+
+    # --- SSO (LoginHub) ---------------------------------------------------
+    # Jeśli user nie jest zalogowany lokalnie, sprawdź czy ma ważne ciasteczko
+    # LoginHub. Jeśli jego konto jest już połączone z home-library — zaloguj
+    # go lokalnie. Jeśli NIE jest jeszcze połączone — resolve_or_create_local_user
+    # samo zakłada tu dla niego nowe konto (_create_homelibrary_user) i zgłasza
+    # połączenie do Huba, więc nie trzeba czekać na ręczne sparowanie kont w
+    # panelu /admin Huba. Zwykłe logowanie hasłem (/auth/login) zostaje bez
+    # zmian jako plan B.
+    @app.before_request
+    def _sso_autologin():
+        if current_user.is_authenticated:
+            return
+        local_id = sso_client.resolve_or_create_local_user(
+            app_slug="homelibrary", create_user=_create_homelibrary_user
+        )
+        if local_id:
+            user = User.query.get(local_id)
+            if user:
+                login_user(user)
 
     from .auth.routes import auth_bp
     from .main.routes import main_bp

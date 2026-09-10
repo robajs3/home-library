@@ -9,33 +9,12 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for("main.dashboard"))
-
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        confirm = request.form.get("confirm", "")
-
-        if not name or not email or not password:
-            flash("Wypełnij wszystkie pola.", "danger")
-        elif password != confirm:
-            flash("Hasła nie są identyczne.", "danger")
-        elif len(password) < 6:
-            flash("Hasło musi mieć minimum 6 znaków.", "danger")
-        elif User.query.filter_by(email=email).first():
-            flash("Konto z tym adresem e-mail już istnieje.", "danger")
-        else:
-            user = User(name=name, email=email)
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            flash("Witaj w Home Library!", "success")
-            return redirect(url_for("main.dashboard"))
-
-    return render_template("auth/register.html")
+    # Konta zakłada teraz LoginHub (jedno konto do wszystkich appek) — appka
+    # przekierowuje na jego rejestrację zamiast pokazywać własny, osobny
+    # formularz, żeby nie powstawały konta "tylko lokalne" bez SSO.
+    from urllib.parse import quote
+    next_url = request.args.get("next") or url_for("main.dashboard")
+    return redirect(f"/auth/register?next={quote(next_url)}")
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
