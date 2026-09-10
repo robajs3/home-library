@@ -7,7 +7,9 @@ services:
     environment:
       POSTGRES_DB: homelibrary
       POSTGRES_USER: homelibrary
-      POSTGRES_PASSWORD: homelibrary
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +17,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - default
+      - sso_net
 
   web:
     build: .
@@ -24,14 +29,24 @@ services:
         condition: service_healthy
     environment:
       SECRET_KEY: ${SECRET_KEY:-change-me-in-.env}
-      DATABASE_URL: postgresql://homelibrary:homelibrary@db:5432/homelibrary
+      DATABASE_URL: postgresql://homelibrary:${DB_PASSWORD}@db:5432/homelibrary
       UPLOAD_FOLDER: /app/uploads
       APP_PREFIX: ${APP_PREFIX:-}
+      SSO_SECRET: ${SSO_SECRET}
+      HUB_INTERNAL_URL: ${HUB_INTERNAL_URL:-http://hub-web:8000}
     volumes:
       - uploads_data:/app/uploads
     ports:
       - "8007:8000"
+    networks:
+      - default
+      - sso_net
 
 volumes:
   pg_data:
   uploads_data:
+
+networks:
+  default:
+  sso_net:
+    external: true
